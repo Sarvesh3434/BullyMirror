@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Campus Mirror — Who Are You?</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  :root {
+    --bully: #E8533A;
+    --victim: #4A90D9;
+    --enabler: #E8A020;
+    --bystander: #7A7A8A;
+    --upstander: #27B08B;
+    --bg: #0D0D12;
+    --surface: #16161E;
+    --surface2: #1E1E28;
+    --border: rgba(255,255,255,0.07);
+    --text: #F0EEF8;
+    --muted: #7A788A;
+    --accent: #C4B8FF;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background: radial-gradient(ellipse 80% 50% at 20% 0%, rgba(196,184,255,0.06) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 40% at 80% 100%, rgba(39,176,139,0.05) 0%, transparent 60%);
+    pointer-events: none; z-index: 0;
+  }
+  .page { position: relative; z-index: 1; max-width: 680px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+  /* HERO */
+  .hero { text-align: center; padding: 3rem 0 2.5rem; }
+  .hero-badge {
+    display: inline-block; font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 600;
+    letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent);
+    background: rgba(196,184,255,0.1); border: 1px solid rgba(196,184,255,0.2);
+    padding: 5px 14px; border-radius: 99px; margin-bottom: 1.5rem;
+  }
+  .hero h1 {
+    font-family: 'Syne', sans-serif; font-size: clamp(2.4rem, 6vw, 3.6rem);
+    font-weight: 800; line-height: 1.08; letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #F0EEF8 30%, #C4B8FF 70%, #8BDDCA 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    margin-bottom: 1rem;
+  }
+  .hero p { font-size: 16px; color: var(--muted); line-height: 1.7; max-width: 440px; margin: 0 auto 2rem; }
+  .start-btn {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 600;
+    background: linear-gradient(135deg, #C4B8FF, #8BDDCA);
+    color: #0D0D12; border: none; border-radius: 99px;
+    padding: 14px 32px; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 0 40px rgba(196,184,255,0.25);
+  }
+  .start-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 50px rgba(196,184,255,0.35); }
+  .start-btn .arrow { font-size: 18px; transition: transform 0.2s; }
+  .start-btn:hover .arrow { transform: translateX(4px); }
+  .role-pills { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 2rem; }
+  .pill {
+    font-size: 12px; padding: 5px 14px; border-radius: 99px;
+    font-weight: 500; border: 1px solid;
+  }
+
+  /* QUIZ */
+  #quiz { display: none; }
+  .prog-wrap { margin-bottom: 2rem; }
+  .prog-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .prog-label { font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  .prog-num { font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 700; color: var(--accent); }
+  .prog-track { height: 3px; background: var(--border); border-radius: 99px; position: relative; }
+  .prog-fill { height: 3px; background: linear-gradient(90deg, #C4B8FF, #8BDDCA); border-radius: 99px; transition: width 0.5s cubic-bezier(.4,0,.2,1); }
+
+  .q-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 20px; padding: 2rem; margin-bottom: 1.5rem;
+    animation: fadeUp 0.35s ease both;
+  }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+  .q-num { font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+  .q-text { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 600; line-height: 1.4; color: var(--text); }
+
+  .opts { display: flex; flex-direction: column; gap: 10px; }
+  .opt {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 14px; padding: 14px 18px;
+    font-size: 15px; color: rgba(240,238,248,0.75); line-height: 1.5;
+    cursor: pointer; text-align: left; transition: all 0.18s ease;
+    position: relative; overflow: hidden;
+  }
+  .opt::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+    width: 3px; background: linear-gradient(180deg,#C4B8FF,#8BDDCA);
+    transform: scaleY(0); transition: transform 0.2s ease; border-radius: 3px 0 0 3px;
+  }
+  .opt:hover { border-color: rgba(196,184,255,0.3); color: var(--text); background: rgba(196,184,255,0.05); }
+  .opt.selected { border-color: rgba(196,184,255,0.5); background: rgba(196,184,255,0.08); color: var(--text); }
+  .opt.selected::before { transform: scaleY(1); }
+
+  .nav-row { display: flex; justify-content: space-between; align-items: center; }
+  .back-btn {
+    background: transparent; border: 1px solid var(--border); color: var(--muted);
+    font-family: 'DM Sans', sans-serif; font-size: 14px; padding: 10px 20px;
+    border-radius: 99px; cursor: pointer; transition: all 0.2s;
+  }
+  .back-btn:hover { border-color: rgba(255,255,255,0.2); color: var(--text); }
+  .nxt-btn {
+    font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700;
+    background: linear-gradient(135deg, #C4B8FF, #8BDDCA); color: #0D0D12;
+    border: none; border-radius: 99px; padding: 12px 28px; cursor: pointer;
+    transition: all 0.2s; box-shadow: 0 0 24px rgba(196,184,255,0.2);
+  }
+  .nxt-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 32px rgba(196,184,255,0.35); }
+  .nxt-btn:disabled { opacity: 0.3; cursor: default; transform: none; box-shadow: none; }
+
+  /* RESULT */
+  #result { display: none; animation: fadeUp 0.5s ease both; }
+  .result-banner {
+    border-radius: 20px; padding: 2rem; margin-bottom: 1.5rem; position: relative; overflow: hidden;
+  }
+  .result-banner::after {
+    content: ''; position: absolute; top: -40px; right: -40px;
+    width: 180px; height: 180px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,255,255,0.07), transparent 70%);
+  }
+  .result-tag { font-size: 11px; font-weight: 600; font-family: 'Syne', sans-serif; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.7; margin-bottom: 10px; }
+  .result-role { font-family: 'Syne', sans-serif; font-size: 32px; font-weight: 800; margin-bottom: 10px; line-height: 1; }
+  .result-desc { font-size: 15px; line-height: 1.7; opacity: 0.85; max-width: 480px; }
+
+  .bars-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 1.5rem; margin-bottom: 1rem; }
+  .bars-title { font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 700; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 1.2rem; }
+  .bar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .bar-lbl { font-size: 13px; color: var(--muted); min-width: 100px; }
+  .bar-track { flex: 1; background: var(--surface2); border-radius: 99px; height: 6px; }
+  .bar-fill { height: 6px; border-radius: 99px; transition: width 0.8s cubic-bezier(.4,0,.2,1); }
+  .bar-pct { font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 700; min-width: 36px; text-align: right; }
+
+  .advice-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 1.5rem; margin-bottom: 1rem; }
+  .adv-header { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; }
+  .adv-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .adv-title { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; color: var(--text); }
+  .adv-sub { font-size: 12px; color: var(--muted); margin-left: auto; }
+  .adv-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+  .adv-list li { font-size: 14px; color: rgba(240,238,248,0.75); line-height: 1.6; padding-left: 16px; position: relative; }
+  .adv-list li::before { content: '→'; position: absolute; left: 0; color: var(--muted); font-size: 13px; }
+
+  .share-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 1.5rem; margin-bottom: 1rem; }
+  .share-title { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 1.2rem; }
+  .share-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .share-link-box {
+    flex: 1; min-width: 200px; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 14px; font-family: 'DM Sans', sans-serif;
+    font-size: 13px; color: var(--muted); user-select: all; word-break: break-all;
+  }
+  .copy-btn {
+    font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 600;
+    background: rgba(196,184,255,0.1); border: 1px solid rgba(196,184,255,0.25);
+    color: var(--accent); border-radius: 10px; padding: 10px 18px; cursor: pointer; transition: all 0.2s; white-space: nowrap;
+  }
+  .copy-btn:hover { background: rgba(196,184,255,0.2); }
+  .qr-wrap { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+  .qr-label { font-size: 12px; color: var(--muted); font-family: 'Syne', sans-serif; letter-spacing: 0.06em; text-transform: uppercase; }
+  #qrcode { background: white; padding: 10px; border-radius: 12px; }
+
+  .retake-btn {
+    display: block; width: 100%; font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 600;
+    background: transparent; border: 1px solid var(--border); color: var(--muted);
+    border-radius: 14px; padding: 14px; cursor: pointer; transition: all 0.2s; text-align: center; margin-top: 0.5rem;
+  }
+  .retake-btn:hover { border-color: rgba(255,255,255,0.2); color: var(--text); }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HERO -->
+  <div id="hero">
+    <div class="hero">
+      <div class="hero-badge">Campus Behavior Quiz</div>
+      <h1>Who are you<br>in the room?</h1>
+      <p>7 honest questions. No judgment. Find out your role in campus dynamics and what you can do about it.</p>
+      <button class="start-btn" onclick="startQuiz()">
+        Take the quiz <span class="arrow">→</span>
+      </button>
+      <div class="role-pills">
+        <span class="pill" style="color:#E8533A;border-color:rgba(232,83,58,0.3);background:rgba(232,83,58,0.08)">The Bully</span>
+        <span class="pill" style="color:#4A90D9;border-color:rgba(74,144,217,0.3);background:rgba(74,144,217,0.08)">The Victim</span>
+        <span class="pill" style="color:#E8A020;border-color:rgba(232,160,32,0.3);background:rgba(232,160,32,0.08)">The Enabler</span>
+        <span class="pill" style="color:#9A9AAA;border-color:rgba(154,154,170,0.3);background:rgba(154,154,170,0.08)">The Bystander</span>
+        <span class="pill" style="color:#27B08B;border-color:rgba(39,176,139,0.3);background:rgba(39,176,139,0.08)">The Upstander</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- QUIZ -->
+  <div id="quiz">
+    <div class="prog-wrap">
+      <div class="prog-top">
+        <span class="prog-label">Your progress</span>
+        <span class="prog-num" id="prog-num">1 / 7</span>
+      </div>
+      <div class="prog-track"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+    </div>
+    <div class="q-card" id="q-card">
+      <div class="q-num" id="q-num">Question 01</div>
+      <div class="q-text" id="q-text"></div>
+    </div>
+    <div class="opts" id="opts"></div>
+    <div class="nav-row" style="margin-top:1.5rem">
+      <button class="back-btn" id="back-btn" onclick="prevQ()" style="visibility:hidden">← Back</button>
+      <button class="nxt-btn" id="nxt-btn" onclick="nextQ()" disabled>Continue →</button>
+    </div>
+  </div>
+
+  <!-- RESULT -->
+  <div id="result"></div>
+
+</div>
+
+<script>
+const questions = [
+  {
+    text: "You're in a group chat where a classmate is being mocked. What do you do?",
+    options: [
+      { text: "Laugh along or react — it's just campus drama", scores: { bully:3, enabler:1 } },
+      { text: "Stay silent and scroll past — not my problem", scores: { bystander:3 } },
+      { text: "Privately message the person being mocked to check in", scores: { upstander:2 } },
+      { text: "Call it out in the chat or report it to someone", scores: { upstander:3 } }
+    ]
+  },
+  {
+    text: "How often do you tease someone about their appearance, habits, or background — even as 'banter'?",
+    options: [
+      { text: "Quite often — everyone does it, it's how we hang", scores: { bully:3 } },
+      { text: "Sometimes, when I'm with my friend group", scores: { bully:1, enabler:1 } },
+      { text: "Rarely, and only if the person is genuinely fine with it", scores: { upstander:1 } },
+      { text: "Never — I think carefully about how words land", scores: { upstander:2 } }
+    ]
+  },
+  {
+    text: "Someone at college repeatedly makes you feel left out, embarrassed or targeted. What do you do?",
+    options: [
+      { text: "I feel it all the time but have no idea who to tell", scores: { victim:3 } },
+      { text: "I've hinted at it but nothing changed — I just avoid them", scores: { victim:2 } },
+      { text: "I told a friend or counselor and asked for help", scores: { victim:1, upstander:1 } },
+      { text: "This hasn't really happened to me", scores: { bystander:1 } }
+    ]
+  },
+  {
+    text: "A friend starts spreading a rumor about someone. Your move?",
+    options: [
+      { text: "Help them spread it — I'm not a fan of that person anyway", scores: { bully:3, enabler:1 } },
+      { text: "Stay quiet — I don't stop them but don't join in", scores: { enabler:2, bystander:1 } },
+      { text: "Tell my friend it's not great, but don't push it further", scores: { bystander:1, upstander:1 } },
+      { text: "Firmly tell them to stop and refuse to pass it on", scores: { upstander:3 } }
+    ]
+  },
+  {
+    text: "Someone keeps 'joking' at your expense in public. When you say you don't like it, they say 'chill'. What do you do?",
+    options: [
+      { text: "Laugh it off — I don't want to seem too sensitive", scores: { victim:3 } },
+      { text: "I avoid that person as much as possible after that", scores: { victim:2 } },
+      { text: "I repeat myself clearly: 'This isn't okay, stop it.'", scores: { upstander:2 } },
+      { text: "This hasn't been my experience at college", scores: { bystander:1 } }
+    ]
+  },
+  {
+    text: "You see a classmate sitting alone every day, visibly left out of every group. What do you do?",
+    options: [
+      { text: "Not my concern — I've got my own circle to manage", scores: { bystander:3 } },
+      { text: "Feel bad but don't do anything about it", scores: { bystander:2 } },
+      { text: "Say hi or sit with them at least once", scores: { upstander:2 } },
+      { text: "Make a real effort to bring them into my group", scores: { upstander:3 } }
+    ]
+  },
+  {
+    text: "Which statement best describes your college experience so far?",
+    options: [
+      { text: "I've been made to feel small, targeted, or excluded multiple times", scores: { victim:3 } },
+      { text: "I've probably hurt someone without fully realizing it", scores: { bully:2, enabler:1 } },
+      { text: "I've watched things happen and felt too frozen to act", scores: { bystander:3 } },
+      { text: "I actively try to make my campus a more inclusive space", scores: { upstander:3 } }
+    ]
+  }
+];
+
+const roles = {
+  bully:     { label:"The Bully",     color:"#E8533A", bg:"rgba(232,83,58,0.12)",  border:"rgba(232,83,58,0.25)" },
+  victim:    { label:"The Victim",    color:"#4A90D9", bg:"rgba(74,144,217,0.12)", border:"rgba(74,144,217,0.25)" },
+  enabler:   { label:"The Enabler",   color:"#E8A020", bg:"rgba(232,160,32,0.12)", border:"rgba(232,160,32,0.25)" },
+  bystander: { label:"The Bystander", color:"#9A9AAA", bg:"rgba(154,154,170,0.12)",border:"rgba(154,154,170,0.25)" },
+  upstander: { label:"The Upstander", color:"#27B08B", bg:"rgba(39,176,139,0.12)", border:"rgba(39,176,139,0.25)" }
+};
+
+const descriptions = {
+  bully:     "Your answers suggest you sometimes use power, words, or social dynamics to put others down — possibly more than you realize. This doesn't define you, but it's a pattern worth breaking.",
+  victim:    "Your answers show you've been on the receiving end of repeated harmful behavior. That takes a real toll — and you deserve genuine support, not silence.",
+  enabler:   "Your answers suggest you're often nearby when harmful behavior happens — laughing along, staying quiet, or passively joining in. You have far more influence than you think.",
+  bystander: "Your answers show you tend to witness uncomfortable situations without stepping in. You clearly care — but hesitation keeps you on the sidelines.",
+  upstander: "Your answers show you actively try to make your environment safer and kinder. You step in, speak up, and support others — that genuinely matters more than you know."
+};
+
+const advice = {
+  bully:     { points:["Reflect on why you put others down — it often stems from your own stress or insecurity.","Notice when you're about to say something cutting. That pause can change everything.","Consider reaching out to someone you've hurt. A genuine apology shifts things.","Talk to a college counselor — understanding your triggers helps you break patterns.","Build friendships based on shared interests, not shared targets."] },
+  victim:    { points:["You are not alone and it is not your fault. What's happening to you isn't acceptable.","Document incidents — dates, screenshots, details. It helps if you need to escalate.","Tell someone you trust: a friend, professor, or your campus support team.","Set clear, firm limits with the person involved. A direct 'stop' sometimes shifts dynamics.","Connect with campus mental health services — talking helps more than you'd expect."] },
+  enabler:   { points:["Going along with bullying — even silently — gives it power. Your voice genuinely matters.","Next time it happens in your group, try: 'That's a bit much, let's move on.'","Ask yourself: would you behave this way if the target was your closest friend?","Check in privately with someone who's been hurt in your presence.","You don't need to be a hero — just choose not to add fuel to the fire."] },
+  bystander: { points:["Silence often reads as approval — to both the bully and the victim.","You don't have to confront aggressively. A quiet 'hey, come on' can break the cycle.","Check in with the person being targeted afterward. It matters more than you think.","Report anonymously if direct action feels too risky — campuses have ways to do this.","Challenge yourself to do one small thing differently next time."] },
+  upstander: { points:["You're already creating the campus culture everyone benefits from.","Don't burn yourself out trying to fix everything — know your limits.","Support the person targeted after the incident, not just in the moment.","Encourage your friends to speak up too — upstanders multiply when they're visible.","Keep going. The ripple effect of your actions is bigger than you realize."] }
+};
+
+let cur = 0, selIdx = null, answers = [];
+let scores = { bully:0, victim:0, enabler:0, bystander:0, upstander:0 };
+
+function startQuiz() {
+  document.getElementById('hero').style.display = 'none';
+  document.getElementById('quiz').style.display = 'block';
+  renderQ();
+}
+
+function renderQ() {
+  const q = questions[cur];
+  document.getElementById('q-num').textContent = `Question ${String(cur+1).padStart(2,'0')}`;
+  document.getElementById('q-text').textContent = q.text;
+  document.getElementById('prog-num').textContent = `${cur+1} / ${questions.length}`;
+  document.getElementById('prog-fill').style.width = `${(cur/questions.length)*100}%`;
+  document.getElementById('back-btn').style.visibility = cur > 0 ? 'visible' : 'hidden';
+  document.getElementById('nxt-btn').textContent = cur === questions.length-1 ? 'See my results →' : 'Continue →';
+
+  const card = document.getElementById('q-card');
+  card.style.animation = 'none'; void card.offsetWidth; card.style.animation = '';
+
+  const opts = document.getElementById('opts');
+  opts.innerHTML = '';
+  selIdx = answers[cur] !== undefined ? answers[cur] : null;
+  document.getElementById('nxt-btn').disabled = selIdx === null;
+
+  q.options.forEach((o, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'opt' + (selIdx === i ? ' selected' : '');
+    btn.textContent = o.text;
+    btn.onclick = () => {
+      document.querySelectorAll('.opt').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selIdx = i; answers[cur] = i;
+      document.getElementById('nxt-btn').disabled = false;
+    };
+    opts.appendChild(btn);
+  });
+}
+
+function prevQ() { if (cur > 0) { cur--; selIdx = answers[cur]; renderQ(); } }
+
+function nextQ() {
+  if (selIdx === null) return;
+  if (cur < questions.length-1) { cur++; selIdx = null; renderQ(); }
+  else showResult();
+}
+
+function showResult() {
+  scores = { bully:0, victim:0, enabler:0, bystander:0, upstander:0 };
+  answers.forEach((ai, qi) => {
+    const sc = questions[qi].options[ai].scores;
+    Object.entries(sc).forEach(([k,v]) => scores[k] += v);
+  });
+  const total = Object.values(scores).reduce((a,b)=>a+b,0) || 1;
+  const sorted = Object.keys(scores).sort((a,b)=>scores[b]-scores[a]);
+  const top = sorted[0];
+  const r = roles[top];
+
+  document.getElementById('quiz').style.display = 'none';
+  const el = document.getElementById('result');
+  el.style.display = 'block';
+
+  const shareUrl = window.location.href.split('?')[0];
+
+  let html = `
+  <div class="result-banner" style="background:${r.bg};border:1px solid ${r.border}">
+    <div class="result-tag">Your primary role</div>
+    <div class="result-role" style="color:${r.color}">${r.label}</div>
+    <div class="result-desc">${descriptions[top]}</div>
+  </div>
+
+  <div class="bars-card">
+    <div class="bars-title">Score breakdown</div>
+    ${sorted.map(role => {
+      const pct = Math.round((scores[role]/total)*100);
+      return `<div class="bar-row">
+        <span class="bar-lbl">${roles[role].label}</span>
+        <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${roles[role].color}"></div></div>
+        <span class="bar-pct" style="color:${roles[role].color}">${pct}%</span>
+      </div>`;
+    }).join('')}
+  </div>
+
+  <div class="advice-card">
+    <div class="adv-header">
+      <div class="adv-dot" style="background:${r.color}"></div>
+      <div class="adv-title">What you can do</div>
+      <div class="adv-sub" style="color:${r.color}">${r.label}</div>
+    </div>
+    <ul class="adv-list">${advice[top].points.map(p=>`<li>${p}</li>`).join('')}</ul>
+  </div>`;
+
+  if (sorted[1] && scores[sorted[1]] > 0) {
+    const r2 = roles[sorted[1]];
+    html += `<div class="advice-card">
+      <div class="adv-header">
+        <div class="adv-dot" style="background:${r2.color}"></div>
+        <div class="adv-title">Secondary tendency</div>
+        <div class="adv-sub" style="color:${r2.color}">${r2.label}</div>
+      </div>
+      <ul class="adv-list">${advice[sorted[1]].points.slice(0,3).map(p=>`<li>${p}</li>`).join('')}</ul>
+    </div>`;
+  }
+
+  html += `
+  <div class="share-card">
+    <div class="share-title">Share this quiz</div>
+    <div class="share-row">
+      <div class="share-link-box" id="share-link">${shareUrl}</div>
+      <button class="copy-btn" onclick="copyLink()">Copy link</button>
+    </div>
+    <div class="qr-wrap">
+      <div class="qr-label">Scan to open</div>
+      <div id="qrcode"></div>
+    </div>
+  </div>
+  <button class="retake-btn" onclick="retake()">↺ Retake the quiz</button>`;
+
+  el.innerHTML = html;
+
+  setTimeout(() => {
+    if (typeof QRCode !== 'undefined') {
+      new QRCode(document.getElementById('qrcode'), {
+        text: shareUrl,
+        width: 140, height: 140,
+        colorDark: '#1a1a2e', colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.M
+      });
+    }
+  }, 100);
+}
+
+function copyLink() {
+  const url = document.getElementById('share-link').textContent;
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = document.querySelector('.copy-btn');
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy link', 2000);
+  });
+}
+
+function retake() {
+  cur = 0; selIdx = null; answers = [];
+  scores = { bully:0, victim:0, enabler:0, bystander:0, upstander:0 };
+  document.getElementById('result').style.display = 'none';
+  document.getElementById('hero').style.display = 'block';
+}
+</script>
+</body>
+</html>
